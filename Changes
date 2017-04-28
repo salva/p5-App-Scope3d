@@ -1,0 +1,6 @@
+Revision history for Perl extension App::Scope3D.
+
+0.01  Fri Apr 28 19:03:00 2017
+	- original version; created by h2xs 1.23 with options
+		-AXn App::Scope3D
+
