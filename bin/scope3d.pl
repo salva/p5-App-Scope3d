@@ -21,6 +21,7 @@ $window->show_all;
 
 my $capture_area = $builder->get_object('capture-area');
 my $variance_area = $builder->get_object('variance-area');
+my $result_area = $builder->get_object('result-area');
 
 map { Glib::Object::Introspection->setup(basename => $_, version => '1.0', package => 'GStreamer') } qw'Gst GstBase';
 GStreamer::init([$0, @ARGV]);
@@ -66,6 +67,8 @@ $e{multifilesink}->set_property('post-messages' => 1);
 $e{queue}->set(leaky => 'upstream');
 $e{pngenc}->set('compression-level' => 0);
 
+$e{v4l2src}->set('device' => '/dev/video1');
+
 no strict 'refs';
 warn Dumper [sort grep //i, keys %{'Glib::Object::_Unregistered::GstXvImageSink::'}];
 
@@ -84,6 +87,8 @@ $bus->add_signal_watch;
 
 my $capture_pdl;
 my $variance_img_pdl;
+my $best_variance_pdl;
+my $result_pdl;
 
 sub new_png_available {
     my $fn = shift;
@@ -96,8 +101,17 @@ sub new_png_available {
         #say "variance: ", $variance_pdl->reshape(30, 30);
         $variance_img_pdl = $variance_pdl->convert(byte());
         $variance_img_pdl = cat($variance_img_pdl, $variance_img_pdl, $variance_img_pdl)->reorder(2, 0, 1);
+
+        $best_variance_pdl //= $variance_pdl;
+        $result_pdl //= $capture_pdl;
+
+        imgbest($variance_pdl, $capture_pdl, $best_variance_pdl, $result_pdl);
+
         $capture_area->queue_draw;
         $variance_area->queue_draw;
+        $result_area->queue_draw;
+
+        say "device name: " . $e{v4l2src}->get('device-name');
     }
 }
 
@@ -125,6 +139,7 @@ sub draw_pdl {
 
 $capture_area->signal_connect(draw => sub { draw_pdl($capture_pdl, @_); undef $capture_pdl});
 $variance_area->signal_connect(draw => sub { draw_pdl($variance_img_pdl, @_)});
+$result_area->signal_connect(draw => sub { draw_pdl($result_pdl, @_)});
 
 $bus->signal_connect(message => sub { my ($bus, $message) = @_;
                                       my $st = $message->get_structure;

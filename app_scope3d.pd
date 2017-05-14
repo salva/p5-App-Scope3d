@@ -38,6 +38,18 @@ for (j = 0; j < $SIZE(h); j++) {
         $v(h=>j, w=>i) = sqrt(var);
     }
 }
+EOC
+
+pp_def('imgbest',
+       Pars => 'float v(); byte img(c); float [o] best_v(); byte [o] best_img(c)',
+       Code => <<'EOC');
+
+if ($v() >= $best_v()) {
+    $best_v() = $v();
+    loop (c) %{
+        $best_img() = $img();
+    %}
+}
 
 EOC
 
