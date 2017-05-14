@@ -18,7 +18,7 @@ $builder->add_from_file('scope3d.glade');
 my $window = $builder->get_object('main-window');
 $window->show_all;
 
-my $capturing_area = $builder->get_object('capturing-area');
+my $capture_area = $builder->get_object('capture-area');
 
 map { Glib::Object::Introspection->setup(basename => $_, version => '1.0', package => 'GStreamer') } qw'Gst GstBase';
 GStreamer::init([$0, @ARGV]);
@@ -98,10 +98,10 @@ sub new_png_available {
     #                         [[0, 0, 255], [0, 0, 255], [0, 0, 255], [0, 0, 0 ]],
     #                         [[0, 0, 255], [0, 0, 255], [0, 0, 255], [0, 0, 0 ]]];
 
-    $capturing_area->queue_draw;
+    $capture_area->queue_draw;
 }
 
-sub draw_capturing {
+sub draw_capture {
     if (defined $last_pdl) {
         my ($w, $h) = my @dims = $last_pdl->dims;
         #my $pdl = $last_pdl->xchg(0, 2);
@@ -135,7 +135,7 @@ sub draw_capturing {
     }
 }
 
-$capturing_area->signal_connect(draw => \&draw_capturing);
+$capture_area->signal_connect(draw => \&draw_capture);
 
 $bus->signal_connect(message => sub { my ($bus, $message) = @_;
                                       my $st = $message->get_structure;
