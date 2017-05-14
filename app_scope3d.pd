@@ -1,0 +1,44 @@
+
+#::PP_VERBOSE=1;
+
+pp_boundscheck(0);
+
+pp_def('imgvar',
+       Pars => 'int s(); byte a(c, h, w); float [o] v(h, w)',
+       Code => <<'EOC');
+
+int j;
+for (j = 0; j < $SIZE(h); j++) {
+    int i;
+    for (i = 0; i < $SIZE(w); i++) {
+        double sum = 0, sum2 = 0;
+        int jj, ii;
+        int jj0 = j - $s();
+        int jj1 = j + $s() + 1;
+        int ii0 = i - $s();
+        int ii1 = i + $s() + 1;
+        if (jj0 < 0) jj0 = 0;
+        if (jj1 > $SIZE(h)) jj1 = $SIZE(h);
+        if (ii0 < 0) ii0 = 0;
+        if (ii1 > $SIZE(w)) ii1 = $SIZE(w);
+        for (jj = jj0; jj < jj1; jj++) {
+            for (ii = ii0; ii < ii1; ii++) {
+                int k;
+                for (k = 0; k < $SIZE(c); k++) {
+                    double x = $a(h => jj, w => ii, c => k);
+                    sum += x;
+                    sum2 += x * x;
+                }
+            }
+        }
+        double iarea = 1.0 / ((jj1 - jj0) * (ii1 - ii0) * $SIZE(c));
+        double mu = iarea * sum;
+        double Ex2 = iarea * sum2;
+        double var = (Ex2 - mu * mu);
+        $v(h=>j, w=>i) = sqrt(var);
+    }
+}
+
+EOC
+
+pp_done();

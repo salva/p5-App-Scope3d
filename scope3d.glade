@@ -195,7 +195,7 @@
                   <object class="GtkLabel">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="label" translatable="yes">__glade_unnamed_25</property>
+                    <property name="label" translatable="yes">Result</property>
                   </object>
                 </child>
               </object>
@@ -235,7 +235,7 @@
                       <object class="GtkLabel">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">__glade_unnamed_28</property>
+                        <property name="label" translatable="yes">Capture</property>
                       </object>
                     </child>
                   </object>
@@ -270,7 +270,7 @@
                       <object class="GtkLabel">
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="label" translatable="yes">__glade_unnamed_31</property>
+                        <property name="label" translatable="yes">Variance</property>
                       </object>
                     </child>
                   </object>

@@ -9,6 +9,7 @@ use PDL::IO::GD;
 use Gtk3 '-init';
 use Cairo::GObject;
 use Cairo;
+use App::Scope3D;
 
 my $loop = Glib::MainLoop->new;
 
@@ -19,6 +20,7 @@ my $window = $builder->get_object('main-window');
 $window->show_all;
 
 my $capture_area = $builder->get_object('capture-area');
+my $variance_area = $builder->get_object('variance-area');
 
 map { Glib::Object::Introspection->setup(basename => $_, version => '1.0', package => 'GStreamer') } qw'Gst GstBase';
 GStreamer::init([$0, @ARGV]);
@@ -80,62 +82,49 @@ sub new_sample_cb {
 my $bus = $pipeline->get_bus;
 $bus->add_signal_watch;
 
-my $last_pdl;
+my $capture_pdl;
+my $variance_img_pdl;
 
 sub new_png_available {
     my $fn = shift;
     say "new_png_available: $fn";
-    my $gd = PDL::IO::GD->new({filename => $fn});
-    $last_pdl = $gd->to_pdl;
-    #$last_pdl = PDL::pdl(PDL::byte(), [[[255, 0, 0], [255, 0, 0], [255, 0, 0]],
-    #$last_pdl = pdl byte(), [[[255, 0, 0], [255, 0, 0], [255, 0, 0], [0, 0, 0 ]],
-    #                         [[255, 0, 0], [255, 0, 0], [255, 0, 0], [0, 0, 0 ]],
-    #                         [[255, 0, 0], [255, 0, 0], [255, 0, 0], [0, 0, 0 ]],
-    #                         [[0, 255, 0], [0, 255, 0], [0, 255, 0], [0, 0, 0 ]],
-    #                         [[0, 255, 0], [0, 255, 0], [0, 255, 0], [0, 0, 0 ]],
-    #                         [[0, 255, 0], [0, 255, 0], [0, 255, 0], [0, 0, 0 ]],
-    #                         [[0, 0, 255], [0, 0, 255], [0, 0, 255], [0, 0, 0 ]],
-    #                         [[0, 0, 255], [0, 0, 255], [0, 0, 255], [0, 0, 0 ]],
-    #                         [[0, 0, 255], [0, 0, 255], [0, 0, 255], [0, 0, 0 ]]];
+    unless (defined $capture_pdl) {
+        my $gd = PDL::IO::GD->new({filename => $fn});
+        $capture_pdl = $gd->to_pdl->reorder(2, 0, 1);
 
-    $capture_area->queue_draw;
+        my $variance_pdl = App::Scope3D::imgvar(3, $capture_pdl);
+        #say "variance: ", $variance_pdl->reshape(30, 30);
+        $variance_img_pdl = $variance_pdl->convert(byte());
+        $variance_img_pdl = cat($variance_img_pdl, $variance_img_pdl, $variance_img_pdl)->reorder(2, 0, 1);
+        $capture_area->queue_draw;
+        $variance_area->queue_draw;
+    }
 }
 
-sub draw_capture {
-    if (defined $last_pdl) {
-        my ($w, $h) = my @dims = $last_pdl->dims;
-        #my $pdl = $last_pdl->xchg(0, 2);
 
-        my $pdl = $last_pdl->reorder(2, 0, 1);
-
+sub draw_pdl {
+    my ($pdl, $da, $cr) = @_;
+    if (defined $pdl) {
+        my (undef, $w, $h) = my @dims = $pdl->dims;
         say "dims: @dims";
-        #my $stride = Cairo::Surface::stride_for_width("rgb32", $w);
-        #my $stride = $w;
-        #say "stride: $stride";
-        #$last_pdl->reshape($stride, $h, 4);
-        # my $surface = Cairo::ImageSurface->create_for_data(${$last_pdl->get_dataref}, 'rgb24', $w, $h, $stride);
 
-        my ($da, $cr) = @_;
         my $daw = $da->get_allocated_width || 10;
         my $dah = $da->get_allocated_height || 10;
-        my $sclw = $daw / $w;
-        my $sclh = $dah / $h;
-
-
+        my $sclw = $daw / ($w || 10);
+        my $sclh = $dah / ($h || 10);
         my $scl = ($sclw < $sclh ? $sclw : $sclh);
         say "daw: $daw, dah: $dah, sclw: $sclw, sclh: $sclh, scl: $scl";
 
-        #$cr->save;
         $cr->scale($scl, $scl);
         my $pixbuf = Gtk3::Gdk::Pixbuf->new_from_data(${$pdl->get_dataref}, 'rgb', 0, 8, $w, $h, $w * 3);
         Gtk3::Gdk::cairo_set_source_pixbuf($cr, $pixbuf, 0, 0);
         $cr->paint;
-        #$cr->restore;
         return 0;
     }
 }
 
-$capture_area->signal_connect(draw => \&draw_capture);
+$capture_area->signal_connect(draw => sub { draw_pdl($capture_pdl, @_); undef $capture_pdl});
+$variance_area->signal_connect(draw => sub { draw_pdl($variance_img_pdl, @_)});
 
 $bus->signal_connect(message => sub { my ($bus, $message) = @_;
                                       my $st = $message->get_structure;

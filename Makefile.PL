@@ -1,14 +1,15 @@
 use 5.024001;
+use PDL::Core::Dev;
 use ExtUtils::MakeMaker;
+
+my $package = ["app_scope3d.pd", "Scope3D", "App::Scope3D"];
+
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
 # the contents of the Makefile that is written.
-WriteMakefile(
-    NAME              => 'App::Scope3D',
-    VERSION_FROM      => 'lib/App/Scope3D.pm', # finds $VERSION, requires EU::MM from perl >= 5.5
-    PREREQ_PM         => {}, # e.g., Module::Name => 1.1
-    ABSTRACT_FROM     => 'lib/App/Scope3D.pm', # retrieve abstract from module
-    AUTHOR            => 'Salvador Fandiño <salva@>',
-    #LICENSE           => 'perl',
-    #Value must be from legacy list of licenses here
-    #http://search.cpan.org/perldoc?Module%3A%3ABuild%3A%3AAPI
+WriteMakefile( ABSTRACT => 'The surprising Scope3D',
+               AUTHOR   => 'Salvador Fandiño <sfandino@yahoo.com>',
+               LICENSE  => 'perl',
+               pdlpp_stdargs($package),
 );
+
+sub MY::postamble { pdlpp_postamble($package) }
