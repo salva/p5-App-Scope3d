@@ -40,6 +40,46 @@ for (j = 0; j < $SIZE(h); j++) {
 }
 EOC
 
+pp_def('imgdiff',
+       Pars => 'byte a(c, h, w); float [o] v(h, w)',
+       Code => <<'EOC');
+
+int j, i, k;
+double iarea = 1.0 / ($SIZE(c) * 4.0);
+for (j = 1; j < $SIZE(h) - 1; j++) {
+    for (i = 1; i < $SIZE(w) - 1; i++) {
+        for (k = 0; k < $SIZE(c); k++) {
+            int aux;
+            double dx;
+            double acu = 0;
+            double x = $a(w => i, h => j, c => k);
+            aux = i - 1;
+            dx = x - $a(w => aux, h => j, c => k);
+            acu += dx * dx;
+            aux = i + 1;
+            dx = x - $a(w => aux, h => j, c => k);
+            acu += dx * dx;
+            aux = j - 1;
+            dx = x - $a(w => i, h => aux, c => k);
+            acu += dx * dx;
+            aux = j + 1;
+            dx = x - $a(w => i, h => aux, c => k);
+            acu += dx * dx;
+            $v(h => j, w => i) = sqrt(iarea * acu);
+        }
+    }
+    $v(h => j, w => 0) = 0;
+    $v(h => j, w => i) = 0;
+}
+
+for (i = 0; i < $SIZE(w); i++) {
+    int j = $SIZE(h) - 1;
+    $v(h => 0, w => i) = 0;
+    $v(h => j, w => i) = 0;
+}
+
+EOC
+
 pp_def('imgbest',
        Pars => 'float v(); byte img(c); float [o] best_v(); byte [o] best_img(c)',
        Code => <<'EOC');

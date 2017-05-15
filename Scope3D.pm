@@ -4,7 +4,7 @@
 #
 package App::Scope3D;
 
-@EXPORT_OK  = qw( PDL::PP imgvar PDL::PP imgbest );
+@EXPORT_OK  = qw( PDL::PP imgvar PDL::PP imgdiff PDL::PP imgbest );
 %EXPORT_TAGS = (Func=>[@EXPORT_OK]);
 
 use PDL::Core;
@@ -62,6 +62,37 @@ It will set the bad-value flag of all output piddles if the flag is set for any 
 
 
 *imgvar = \&PDL::imgvar;
+
+
+
+
+
+=head2 imgdiff
+
+=for sig
+
+  Signature: (byte a(c, h, w); float [o] v(h, w))
+
+
+=for ref
+
+info not available
+
+
+=for bad
+
+imgdiff does not process bad values.
+It will set the bad-value flag of all output piddles if the flag is set for any of the input piddles.
+
+
+=cut
+
+
+
+
+
+
+*imgdiff = \&PDL::imgdiff;
 
 
 
