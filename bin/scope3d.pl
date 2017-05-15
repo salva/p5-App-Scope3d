@@ -16,9 +16,11 @@ use Getopt::Long;
 
 my $device = '/dev/video1';
 my $location = '/tmp/capture/frame-%d-%09d.png';
+my $seq = 0;
 
 GetOptions('device|d=s' => \$device,
-           'location|o=s' => \$location);
+           'location|o=s' => \$location,
+           'seq|q=i' => \$seq);
 
 my $loop = Glib::MainLoop->new;
 
@@ -41,11 +43,11 @@ my $pipeline = GStreamer::Pipeline->new('scope3d');
 
 my %e;
 
-my $reset = 0;
+
 
 sub location {
     my $l = $location;
-    $l =~ s/(\%[0-9]*d)(?=.*\%[0-9]*d)/sprintf $1, $reset/e;
+    $l =~ s/(\%[0-9]*d)(?=.*\%[0-9]*d)/sprintf $1, $seq/e;
     say "saving frames as $l";
     $l;
 }
@@ -195,10 +197,10 @@ sub record {
     if ($stopped) {
         $stopped = 0;
         say "Starting recording";
-        $reset++;
+        $seq++;
         $e{multifilesink}->set(location => location());
         $e{multifilesink}->set(index => 0);
-        $e{valve}->set('drop', 1);
+        #$e{valve}->set('drop', 1);
     }
 }
 
